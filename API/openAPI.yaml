@@ -1,0 +1,1214 @@
+openapi: 3.1.0
+info:
+  title: Remote Ops API
+  description: API cho phép thực hiện các thao tác từ xa - file, quét dữ liệu và chạy lệnh
+  version: 1.0.0
+  contact:
+    name: Remote Ops API System
+servers:
+  - url: https://climbing-lioness-factual.ngrok-free.app
+    description: Remote Server
+
+tags:
+  - name: Info
+    description: Thông tin về API
+  - name: FileOps
+    description: Thao tác file và thư mục
+  - name: ScanOps
+    description: Quét và phân tích nội dung file
+  - name: ExecOps
+    description: Thực thi lệnh trên server
+
+paths:
+  /:
+    get:
+      operationId: read_root
+      tags:
+        - Info
+      summary: Thông tin về API và trạng thái kết nối
+      responses:
+        '200':
+          description: Thông tin API
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Welcome to Remote Ops API"
+  
+  #
+  # FILE OPERATIONS
+  #
+  /files/list:
+    get:
+      operationId: list_directory
+      tags:
+        - FileOps
+      summary: Liệt kê nội dung thư mục
+      parameters:
+        - name: path
+          in: query
+          required: true
+          description: Đường dẫn tới thư mục cần liệt kê
+          schema:
+            type: string
+            example: C:/Users
+      responses:
+        '200':
+          description: Danh sách các file và thư mục
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Directory listed successfully"
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          example: example.txt
+                        path:
+                          type: string
+                          example: C:/Users/example.txt
+                        type:
+                          type: string
+                          enum: [file, directory]
+                        size:
+                          type: integer
+                          nullable: true
+                          example: 1024
+                        modified:
+                          type: number
+                          format: float
+                          example: 1653422485.234
+        '404':
+          description: Không tìm thấy thư mục
+  
+  /files/create/file:
+    post:
+      operationId: create_file
+      tags:
+        - FileOps
+      summary: Tạo file mới
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - path
+              properties:
+                path:
+                  type: string
+                  description: Đường dẫn tới file cần tạo
+                  example: C:/path/to/file.txt
+                content:
+                  type: string
+                  description: Nội dung file (tùy chọn)
+                  example: This is content of the file
+      responses:
+        '200':
+          description: File đã được tạo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "File created successfully"
+                  data:
+                    type: object
+                    properties:
+                      path:
+                        type: string
+                        example: C:/path/to/file.txt
+                      size:
+                        type: integer
+                        example: 24
+                      created:
+                        type: boolean
+                        example: true
+  
+  /files/create/directory:
+    post:
+      operationId: create_directory
+      tags:
+        - FileOps
+      summary: Tạo thư mục mới
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - path
+              properties:
+                path:
+                  type: string
+                  description: Đường dẫn thư mục cần tạo
+                  example: C:/path/to/new_folder
+      responses:
+        '200':
+          description: Thư mục đã được tạo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Directory created successfully"
+                  data:
+                    type: object
+                    properties:
+                      path:
+                        type: string
+                        example: C:/path/to/new_folder
+                      created:
+                        type: boolean
+                        example: true
+  
+  /files/read:
+    get:
+      operationId: read_file
+      tags:
+        - FileOps
+      summary: Đọc nội dung file
+      parameters:
+        - name: path
+          in: query
+          required: true
+          description: Đường dẫn đến file cần đọc
+          schema:
+            type: string
+            example: C:/path/to/file.txt
+      responses:
+        '200':
+          description: Nội dung file
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "File read successfully"
+                  data:
+                    type: object
+                    properties:
+                      path:
+                        type: string
+                        example: C:/path/to/file.txt
+                      content:
+                        type: string
+                        example: Content of the file
+                      size:
+                        type: integer
+                        example: 24
+        '404':
+          description: Không tìm thấy file
+  
+  /files/delete:
+    delete:
+      operationId: delete_item
+      tags:
+        - FileOps
+      summary: Xóa file hoặc thư mục
+      parameters:
+        - name: path
+          in: query
+          required: true
+          description: Đường dẫn đến file hoặc thư mục cần xóa
+          schema:
+            type: string
+            example: C:/path/to/file.txt
+      responses:
+        '200':
+          description: Đã xóa thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "file deleted successfully"
+                  data:
+                    type: object
+                    properties:
+                      path:
+                        type: string
+                        example: C:/path/to/file.txt
+                      deleted:
+                        type: boolean
+                        example: true
+                      type:
+                        type: string
+                        enum: [file, directory]
+                        example: file
+        '404':
+          description: Không tìm thấy file hoặc thư mục
+  
+  /files/move:
+    post:
+      operationId: move_item
+      tags:
+        - FileOps
+      summary: Di chuyển hoặc đổi tên file/thư mục
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - source_path
+                - destination_path
+              properties:
+                source_path:
+                  type: string
+                  description: Đường dẫn nguồn
+                  example: C:/path/source.txt
+                destination_path:
+                  type: string
+                  description: Đường dẫn đích
+                  example: C:/new_path/dest.txt
+      responses:
+        '200':
+          description: Đã di chuyển thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "file moved successfully"
+                  data:
+                    type: object
+                    properties:
+                      source:
+                        type: string
+                        example: C:/path/source.txt
+                      destination:
+                        type: string
+                        example: C:/new_path/dest.txt
+                      moved:
+                        type: boolean
+                        example: true
+                      type:
+                        type: string
+                        enum: [file, directory]
+                        example: file
+        '404':
+          description: Không tìm thấy file hoặc thư mục nguồn
+  
+  /files/copy:
+    post:
+      operationId: copy_item
+      tags:
+        - FileOps
+      summary: Sao chép file/thư mục
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - source_path
+                - destination_path
+              properties:
+                source_path:
+                  type: string
+                  description: Đường dẫn nguồn
+                  example: C:/path/source.txt
+                destination_path:
+                  type: string
+                  description: Đường dẫn đích
+                  example: C:/new_path/dest.txt
+      responses:
+        '200':
+          description: Đã sao chép thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "file copied successfully"
+                  data:
+                    type: object
+                    properties:
+                      source:
+                        type: string
+                        example: C:/path/source.txt
+                      destination:
+                        type: string
+                        example: C:/new_path/dest.txt
+                      copied:
+                        type: boolean
+                        example: true
+                      type:
+                        type: string
+                        enum: [file, directory]
+                        example: file
+        '404':
+          description: Không tìm thấy file hoặc thư mục nguồn
+  
+  /files/info:
+    get:
+      operationId: get_file_info
+      tags:
+        - FileOps
+      summary: Lấy thông tin chi tiết về file/thư mục
+      parameters:
+        - name: path
+          in: query
+          required: true
+          description: Đường dẫn đến file hoặc thư mục
+          schema:
+            type: string
+            example: C:/path/to/file.txt
+      responses:
+        '200':
+          description: Thông tin chi tiết
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "File info retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      path:
+                        type: string
+                        example: C:/path/to/file.txt
+                      name:
+                        type: string
+                        example: file.txt
+                      type:
+                        type: string
+                        enum: [file, directory]
+                        example: file
+                      size:
+                        type: integer
+                        nullable: true
+                        example: 1024
+                      created:
+                        type: number
+                        format: float
+                        example: 1653422485.234
+                      modified:
+                        type: number
+                        format: float
+                        example: 1653422485.234
+                      accessed:
+                        type: number
+                        format: float
+                        example: 1653422485.234
+                      permissions:
+                        type: integer
+                        example: 33206
+        '404':
+          description: Không tìm thấy file hoặc thư mục
+  
+  #
+  # SCAN OPERATIONS
+  #
+  /scan/read:
+    post:
+      operationId: read_file_auto
+      tags:
+        - ScanOps
+      summary: Đọc và phân tích nội dung file (tự động phát hiện loại)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - path
+              properties:
+                path:
+                  type: string
+                  description: Đường dẫn tới file cần quét
+                  example: C:/path/to/document.pdf
+                sheet_name:
+                  type: string
+                  description: Tên sheet (cho file Excel)
+                  nullable: true
+                delimiter:
+                  type: string
+                  description: Dấu phân cách (cho file CSV)
+                  default: ","
+      responses:
+        '200':
+          description: Nội dung file đã phân tích
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "File analyzed successfully"
+                  data:
+                    type: object
+  
+  /scan/read/docx:
+    post:
+      operationId: read_docx
+      tags:
+        - ScanOps
+      summary: Đọc file Word (.docx)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - path
+              properties:
+                path:
+                  type: string
+                  description: Đường dẫn đến file Word
+                  example: C:/path/to/document.docx
+      responses:
+        '200':
+          description: Nội dung từ file Word
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Word document analyzed successfully"
+                  data:
+                    type: object
+                    properties:
+                      path:
+                        type: string
+                        example: C:/path/to/document.docx
+                      size:
+                        type: integer
+                        example: 24576
+                      paragraphs:
+                        type: array
+                        items:
+                          type: string
+                      tables:
+                        type: array
+                        items:
+                          type: array
+                          items:
+                            type: array
+                            items:
+                              type: string
+                      full_text:
+                        type: string
+                        example: "Nội dung đầy đủ của văn bản..."
+        '400':
+          description: Lỗi khi đọc file Word
+        '404':
+          description: Không tìm thấy file
+  
+  /scan/read/excel:
+    post:
+      operationId: read_excel
+      tags:
+        - ScanOps
+      summary: Đọc file Excel (.xlsx, .xls)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - path
+              properties:
+                path:
+                  type: string
+                  description: Đường dẫn đến file Excel
+                  example: C:/path/to/file.xlsx
+                sheet_name:
+                  type: string
+                  description: Tên sheet cần đọc
+                  nullable: true
+      responses:
+        '200':
+          description: Dữ liệu từ file Excel
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Excel document analyzed successfully"
+                  data:
+                    type: object
+                    properties:
+                      path:
+                        type: string
+                        example: C:/path/to/file.xlsx
+                      size:
+                        type: integer
+                        example: 24576
+                      sheet_names:
+                        type: array
+                        items:
+                          type: string
+                      current_sheet:
+                        type: string
+                      data:
+                        type: array
+                        items:
+                          type: object
+                      shape:
+                        type: array
+                        items:
+                          type: integer
+        '400':
+          description: Lỗi khi đọc file Excel
+        '404':
+          description: Không tìm thấy file
+  
+  /scan/read/csv:
+    post:
+      operationId: read_csv
+      tags:
+        - ScanOps
+      summary: Đọc file CSV
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - path
+              properties:
+                path:
+                  type: string
+                  description: Đường dẫn đến file CSV
+                  example: C:/path/to/file.csv
+                delimiter:
+                  type: string
+                  description: Ký tự phân cách
+                  default: ","
+      responses:
+        '200':
+          description: Dữ liệu từ file CSV
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "CSV file analyzed successfully"
+                  data:
+                    type: object
+                    properties:
+                      path:
+                        type: string
+                        example: C:/path/to/file.csv
+                      size:
+                        type: integer
+                        example: 1234
+                      columns:
+                        type: array
+                        items:
+                          type: string
+                      data:
+                        type: array
+                        items:
+                          type: object
+                      shape:
+                        type: array
+                        items:
+                          type: integer
+        '400':
+          description: Lỗi khi đọc file CSV
+        '404':
+          description: Không tìm thấy file
+  
+  /scan/read/pdf:
+    post:
+      operationId: read_pdf
+      tags:
+        - ScanOps
+      summary: Đọc file PDF
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - path
+              properties:
+                path:
+                  type: string
+                  description: Đường dẫn đến file PDF
+                  example: C:/path/to/document.pdf
+      responses:
+        '200':
+          description: Nội dung từ file PDF
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "PDF document analyzed successfully"
+                  data:
+                    type: object
+                    properties:
+                      path:
+                        type: string
+                        example: C:/path/to/document.pdf
+                      size:
+                        type: integer
+                        example: 102400
+                      info:
+                        type: object
+                        properties:
+                          title:
+                            type: string
+                          author:
+                            type: string
+                          subject:
+                            type: string
+                          creator:
+                            type: string
+                          producer:
+                            type: string
+                      num_pages:
+                        type: integer
+                        example: 5
+                      pages:
+                        type: array
+                        items:
+                          type: string
+                      full_text:
+                        type: string
+                        example: "Nội dung văn bản từ PDF..."
+        '400':
+          description: Lỗi khi đọc file PDF
+        '404':
+          description: Không tìm thấy file
+  
+  /scan/read/text:
+    post:
+      operationId: read_text
+      tags:
+        - ScanOps
+      summary: Đọc file văn bản thông thường
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - path
+              properties:
+                path:
+                  type: string
+                  description: Đường dẫn đến file text
+                  example: C:/path/to/file.txt
+      responses:
+        '200':
+          description: Nội dung file văn bản
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Text file analyzed successfully"
+                  data:
+                    type: object
+                    properties:
+                      path:
+                        type: string
+                        example: C:/path/to/file.txt
+                      size:
+                        type: integer
+                        example: 1024
+                      content:
+                        type: string
+                        example: "Nội dung file văn bản..."
+                      line_count:
+                        type: integer
+                        example: 25
+        '400':
+          description: Lỗi khi đọc file
+        '404':
+          description: Không tìm thấy file
+  
+  #
+  # EXEC OPERATIONS
+  #
+  /exec/cmd:
+    post:
+      operationId: execute_command
+      tags:
+        - ExecOps
+      summary: Thực thi lệnh shell/bash
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - command
+              properties:
+                command:
+                  type: string
+                  description: Lệnh cần thực thi
+                  example: dir C:\
+                timeout:
+                  type: integer
+                  description: Thời gian chờ tối đa (giây)
+                  nullable: true
+                  default: 60
+      responses:
+        '200':
+          description: Kết quả thực thi lệnh
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Command executed successfully"
+                  data:
+                    type: object
+                    properties:
+                      command:
+                        type: string
+                        example: dir C:\
+                      return_code:
+                        type: integer
+                        example: 0
+                      stdout:
+                        type: string
+                        example: "Directory of C:\\ ... "
+                      stderr:
+                        type: string
+                        example: ""
+                      success:
+                        type: boolean
+                        example: true
+                      system:
+                        type: string
+                        example: "windows"
+        '400':
+          description: Lệnh không hợp lệ hoặc trống
+  
+  /exec/powershell:
+    post:
+      operationId: execute_powershell
+      tags:
+        - ExecOps
+      summary: Thực thi lệnh PowerShell (Windows)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - command
+              properties:
+                command:
+                  type: string
+                  description: Lệnh PowerShell cần thực thi
+                  example: Get-Process
+                timeout:
+                  type: integer
+                  description: Thời gian chờ tối đa (giây)
+                  nullable: true
+                  default: 60
+      responses:
+        '200':
+          description: Kết quả thực thi lệnh PowerShell
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "PowerShell command executed successfully"
+                  data:
+                    type: object
+                    properties:
+                      command:
+                        type: string
+                        example: Get-Process
+                      return_code:
+                        type: integer
+                        example: 0
+                      stdout:
+                        type: string
+                        example: "Handles  NPM(K)    PM(K)     ... "
+                      stderr:
+                        type: string
+                        example: ""
+                      success:
+                        type: boolean
+                        example: true
+        '400':
+          description: Lệnh không hợp lệ hoặc trống, hoặc không chạy trên Windows
+  
+  /exec/cmd/windows:
+    post:
+      operationId: execute_cmd
+      tags:
+        - ExecOps
+      summary: Thực thi lệnh CMD (Windows)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - command
+              properties:
+                command:
+                  type: string
+                  description: Lệnh CMD cần thực thi
+                  example: dir
+                timeout:
+                  type: integer
+                  description: Thời gian chờ tối đa (giây)
+                  nullable: true
+                  default: 60
+      responses:
+        '200':
+          description: Kết quả thực thi lệnh CMD
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "CMD command executed successfully"
+                  data:
+                    type: object
+                    properties:
+                      command:
+                        type: string
+                        example: dir
+                      return_code:
+                        type: integer
+                        example: 0
+                      stdout:
+                        type: string
+                        example: "Directory of C:\\Users\\... "
+                      stderr:
+                        type: string
+                        example: ""
+                      success:
+                        type: boolean
+                        example: true
+        '400':
+          description: Lệnh không hợp lệ hoặc trống, hoặc không chạy trên Windows
+  
+  /exec/bash:
+    post:
+      operationId: execute_bash
+      tags:
+        - ExecOps
+      summary: Thực thi lệnh Bash (Unix/Linux)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - command
+              properties:
+                command:
+                  type: string
+                  description: Lệnh Bash cần thực thi
+                  example: ls -la
+                timeout:
+                  type: integer
+                  description: Thời gian chờ tối đa (giây)
+                  nullable: true
+                  default: 60
+      responses:
+        '200':
+          description: Kết quả thực thi lệnh Bash
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Bash command executed successfully"
+                  data:
+                    type: object
+                    properties:
+                      command:
+                        type: string
+                        example: ls -la
+                      return_code:
+                        type: integer
+                        example: 0
+                      stdout:
+                        type: string
+                        example: "total 68\ndrwxr-xr-x..."
+                      stderr:
+                        type: string
+                        example: ""
+                      success:
+                        type: boolean
+                        example: true
+        '400':
+          description: Lệnh không hợp lệ hoặc trống, hoặc không chạy trên hệ thống Unix/Linux
+  
+  /exec/system-info:
+    get:
+      operationId: get_system_info
+      tags:
+        - ExecOps
+      summary: Lấy thông tin hệ thống
+      responses:
+        '200':
+          description: Thông tin hệ thống
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "System information retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      platform:
+                        type: string
+                        example: "Windows-10-10.0.19045-SP0"
+                      system:
+                        type: string
+                        example: "Windows"
+                      node:
+                        type: string
+                        example: "DESKTOP-PC"
+                      release:
+                        type: string
+                        example: "10"
+                      version:
+                        type: string
+                        example: "10.0.19045"
+                      processor:
+                        type: string
+                        example: "Intel64 Family 6 Model..."
+                      architecture:
+                        type: array
+                        items:
+                          type: string
+                      python_version:
+                        type: string
+                        example: "3.10.0"
+                      python_path:
+                        type: string
+                        example: "C:\\Python310\\python.exe"
+                      current_dir:
+                        type: string
+                        example: "C:\\Users\\Username\\API"
+                      user_home:
+                        type: string
+                        example: "C:\\Users\\Username"
+                      environment_vars:
+                        type: object
+                      windows_version:
+                        type: object
+                        properties:
+                          version:
+                            type: string
+                          build:
+                            type: string
+                          service_pack:
+                            type: string
+                          os_type:
+                            type: string
+                      available_drives:
+                        type: array
+                        items:
+                          type: string
+
+components:
+  schemas:
+    FileCreateRequest:
+      type: object
+      required:
+        - path
+      properties:
+        path:
+          type: string
+          description: Đường dẫn tới file
+          example: C:/path/to/file.txt
+        content:
+          type: string
+          description: Nội dung file (tùy chọn)
+          default: ""
+          example: This is content of file
+    
+    DirectoryCreateRequest:
+      type: object
+      required:
+        - path
+      properties:
+        path:
+          type: string
+          description: Đường dẫn tới thư mục cần tạo
+          example: C:/path/to/folder
+    
+    FileOperationRequest:
+      type: object
+      required:
+        - path
+      properties:
+        path:
+          type: string
+          description: Đường dẫn tới file hoặc thư mục
+          example: C:/path/to/file.txt
+    
+    FileMoveRequest:
+      type: object
+      required:
+        - source_path
+        - destination_path
+      properties:
+        source_path:
+          type: string
+          description: Đường dẫn nguồn
+          example: C:/path/source.txt
+        destination_path:
+          type: string
+          description: Đường dẫn đích
+          example: C:/new_path/dest.txt
+    
+    ScanFileRequest:
+      type: object
+      required:
+        - path
+      properties:
+        path:
+          type: string
+          description: Đường dẫn tới file cần quét
+          example: C:/path/to/file.pdf
+        sheet_name:
+          type: string
+          description: Tên sheet (cho file Excel)
+          nullable: true
+        delimiter:
+          type: string
+          description: Ký tự phân cách (cho file CSV)
+          default: ","
+    
+    CommandRequest:
+      type: object
+      required:
+        - command
+      properties:
+        command:
+          type: string
+          description: Lệnh cần thực thi
+          example: dir C:\
+        timeout:
+          type: integer
+          description: Thời gian chờ tối đa (giây)
+          nullable: true
+          default: 60
